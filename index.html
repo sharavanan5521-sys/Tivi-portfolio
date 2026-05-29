@@ -260,10 +260,7 @@ button { font-family: inherit; cursor: pointer; }
   margin: 0 auto;
   padding: 100px 32px;
   z-index: 2;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 720px;
 }
-#home { content-visibility: visible; contain-intrinsic-size: auto; }
 .section-title {
   position: relative;
   display: inline-block;
@@ -605,12 +602,13 @@ button { font-family: inherit; cursor: pointer; }
 .lightbox {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 500;
   background: rgba(10,10,10,0.94);
   display: grid;
   place-items: center;
   padding: 40px;
   animation: fadeIn 0.2s ease;
+  isolation: isolate;
 }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 .lightbox-inner {
@@ -1016,6 +1014,12 @@ button { font-family: inherit; cursor: pointer; }
 /* ====== SCROLL SFX ====== */
 @media (prefers-reduced-motion: reduce) {
   .scroll-sfx-layer { display: none !important; }
+  .lightbox,
+  .lightbox-inner {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 .scroll-sfx-layer {
   position: fixed;
@@ -1213,6 +1217,13 @@ function setScrollLocked(source, locked) {
   if (locked) scrollLockSources.add(source);
   else scrollLockSources.delete(source);
   document.body.classList.toggle("is-scroll-locked", scrollLockSources.size > 0);
+}
+function releaseScrollLock(source) {
+  scrollLockSources.delete(source);
+  document.body.classList.toggle("is-scroll-locked", scrollLockSources.size > 0);
+}
+function closeOverlays() {
+  window.dispatchEvent(new CustomEvent("tivi:close-overlays"));
 }
 
 /* ─── IMAGE SLOT PLACEHOLDER ─── */
@@ -1478,6 +1489,8 @@ function Nav({ activeSection }) {
   const scrollTo = (e, id) => {
     e.preventDefault();
     setMenuOpen(false);
+    closeOverlays();
+    releaseScrollLock("lightbox");
     const el = document.getElementById(id);
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
   };
@@ -1543,6 +1556,8 @@ function Section({ id, eyebrow, title, children, style = {} }) {
 /* ─── HERO ─── */
 function Hero() {
   const scrollTo = (id) => {
+    closeOverlays();
+    releaseScrollLock("lightbox");
     const el = document.getElementById(id);
     if (!el) return;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
@@ -1693,7 +1708,25 @@ function Portfolio() {
   const prev  = ()    => setLightboxIdx(i => (i - 1 + filtered.length) % filtered.length);
 
   React.useEffect(() => {
-    if (lightboxIdx === null) return;
+    const onNavigate = () => setLightboxIdx(null);
+    window.addEventListener("tivi:close-overlays", onNavigate);
+    return () => window.removeEventListener("tivi:close-overlays", onNavigate);
+  }, []);
+
+  React.useEffect(() => {
+    if (lightboxIdx !== null && lightboxIdx >= filtered.length) {
+      setLightboxIdx(null);
+    }
+  }, [activeCat, filtered.length, lightboxIdx]);
+
+  const active = lightboxIdx !== null ? filtered[lightboxIdx] : null;
+  const lightboxOpen = active != null;
+
+  React.useEffect(() => {
+    if (!lightboxOpen) {
+      releaseScrollLock("lightbox");
+      return;
+    }
     const onKey = (e) => {
       if (e.key === "Escape")     close();
       if (e.key === "ArrowRight") next();
@@ -1703,13 +1736,52 @@ function Portfolio() {
     setScrollLocked("lightbox", true);
     return () => {
       window.removeEventListener("keydown", onKey);
-      setScrollLocked("lightbox", false);
+      releaseScrollLock("lightbox");
     };
-  }, [lightboxIdx, filtered.length]);
+  }, [lightboxOpen, lightboxIdx, filtered.length]);
 
-  const active = lightboxIdx !== null ? filtered[lightboxIdx] : null;
+  const lightboxNode = lightboxOpen && ReactDOM.createPortal(
+    (
+      <div className="lightbox" onClick={close} role="dialog" aria-modal="true" aria-label={active.title}>
+        <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); prev(); }} aria-label="Previous">‹</button>
+        <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); next(); }} aria-label="Next">›</button>
+        <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
+          <button className="lightbox-close" onClick={close} aria-label="Close">×</button>
+          <div className="lightbox-art">
+            <img
+              src={active.image}
+              alt={active.title}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              style={{ maxWidth: "100%", maxHeight: "min(72dvh, 720px)", width: "auto", height: "auto", display: "block" }}
+            />
+          </div>
+          <div className="lightbox-meta">
+            <div className="cat">№ {active.num} — {active.cat}</div>
+            <h3>{active.title}</h3>
+            <p className="desc">{active.desc}</p>
+            <div className="tags">
+              {active.tags.map(t => <span key={t} className="tag">#{t}</span>)}
+            </div>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              marginTop: 10, paddingTop: 14, borderTop: "1.5px solid var(--ink)",
+              fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.2em",
+              textTransform: "uppercase", color: "var(--ink-3)",
+            }}>
+              <span>{lightboxIdx + 1} / {filtered.length}</span>
+              <span>← / →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    document.body
+  );
 
   return (
+    <>
     <Section id="portfolio" eyebrow="02 — Selected Works" title="The Vault">
       <p style={{ maxWidth: 560, marginTop: 8, fontSize: 17, lineHeight: 1.55, color: "var(--ink-2)" }}>
         A working sample of original character design, sequential art and manga studies.
@@ -1722,7 +1794,7 @@ function Portfolio() {
             key={c}
             className="cat-pill"
             data-active={c === activeCat}
-            onClick={() => setActiveCat(c)}
+            onClick={() => { setActiveCat(c); setLightboxIdx(null); }}
           >
             {c}
           </button>
@@ -1765,43 +1837,9 @@ function Portfolio() {
         ))}
       </div>
 
-      {active && (
-        <div className="lightbox" onClick={close} role="dialog" aria-modal="true">
-          <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); prev(); }} aria-label="Previous">‹</button>
-          <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); next(); }} aria-label="Next">›</button>
-          <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
-            <button className="lightbox-close" onClick={close} aria-label="Close">×</button>
-            <div className="lightbox-art">
-              <img
-                src={active.image}
-                alt={active.title}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                style={{ maxWidth: "100%", maxHeight: "min(72dvh, 720px)", width: "auto", height: "auto", display: "block" }}
-              />
-            </div>
-            <div className="lightbox-meta">
-              <div className="cat">№ {active.num} — {active.cat}</div>
-              <h3>{active.title}</h3>
-              <p className="desc">{active.desc}</p>
-              <div className="tags">
-                {active.tags.map(t => <span key={t} className="tag">#{t}</span>)}
-              </div>
-              <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginTop: 10, paddingTop: 14, borderTop: "1.5px solid var(--ink)",
-                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.2em",
-                textTransform: "uppercase", color: "var(--ink-3)",
-              }}>
-                <span>{lightboxIdx + 1} / {filtered.length}</span>
-                <span>← / →</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </Section>
+    {lightboxNode}
+    </>
   );
 }
 
@@ -2093,6 +2131,8 @@ function Footer() {
           <span style={{ color: "var(--accent)" }}>◆</span>
           <a href="#home" onClick={(e) => {
             e.preventDefault();
+            closeOverlays();
+            releaseScrollLock("lightbox");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}>
             ↑ Back to Page 1
