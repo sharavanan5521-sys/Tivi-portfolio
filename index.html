@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Bungee&family=Permanent+Marker&family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<link rel="preload" href="assets/w06.png" as="image" fetchpriority="high">
 <style>
 /* ===============================================
    TIVIYAN PORTFOLIO — Manga / Ink & Tone System
@@ -38,9 +39,18 @@
 }
 
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 body {
   margin: 0;
@@ -49,6 +59,14 @@ body {
   color: var(--ink);
   overflow-x: hidden;
   line-height: 1.5;
+  overscroll-behavior-y: none;
+}
+body.is-scroll-locked {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+a, button, .tile, .cat-pill, .cta, .contact-card, .social-pill, .tool {
+  touch-action: manipulation;
 }
 
 body::before {
@@ -113,9 +131,11 @@ button { font-family: inherit; cursor: pointer; }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--paper);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
   border-bottom: 2px solid var(--ink);
-  backdrop-filter: blur(4px);
+}
+@media (min-width: 961px) and (hover: hover) {
+  .nav { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 .nav-inner {
   max-width: 1280px;
@@ -240,7 +260,10 @@ button { font-family: inherit; cursor: pointer; }
   margin: 0 auto;
   padding: 100px 32px;
   z-index: 2;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }
+#home { content-visibility: visible; contain-intrinsic-size: auto; }
 .section-title {
   position: relative;
   display: inline-block;
@@ -463,6 +486,7 @@ button { font-family: inherit; cursor: pointer; }
   gap: 18px;
   margin-top: 48px;
   align-items: start;
+  contain: layout style;
 }
 .tile {
   position: relative;
@@ -470,11 +494,21 @@ button { font-family: inherit; cursor: pointer; }
   border: 3px solid var(--ink);
   background: var(--paper-2);
   box-shadow: 6px 6px 0 var(--ink);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  contain: layout style paint;
 }
-.tile:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
+@media (hover: hover) {
+  .tile:hover { transform: translate3d(-3px, -3px, 0); box-shadow: 9px 9px 0 var(--ink); }
+}
+
+.tile.t-hero  { grid-column: span 7; }
+.tile.t-tall  { grid-column: span 5; }
+.tile.t-wide  { grid-column: span 5; }
+.tile.t-med   { grid-column: span 4; }
+.tile.t-sm    { grid-column: span 3; }
+.tile.t-wide2 { grid-column: span 8; }
 @media (hover: none) {
   .tile:active { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
   .tile .tile-meta {
@@ -547,13 +581,6 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 3;
   letter-spacing: 0.1em;
 }
-
-.tile.t-hero  { grid-column: span 7; }
-.tile.t-tall  { grid-column: span 5; }
-.tile.t-wide  { grid-column: span 5; }
-.tile.t-med   { grid-column: span 4; }
-.tile.t-sm    { grid-column: span 3; }
-.tile.t-wide2 { grid-column: span 8; }
 
 .category-row {
   display: flex;
@@ -776,8 +803,7 @@ button { font-family: inherit; cursor: pointer; }
   height: 100%;
   background: var(--ink);
   transform-origin: top center;
-  transform: scaleY(0);
-  will-change: transform;
+  transform: scaleY(0) translateZ(0);
 }
 .tl-node {
   position: relative;
@@ -1007,12 +1033,13 @@ button { font-family: inherit; cursor: pointer; }
   user-select: none;
   animation: sfx-burst 1.4s cubic-bezier(.2,.7,.3,1) forwards;
   -webkit-text-stroke: 2px var(--ink);
+  will-change: transform, opacity;
 }
 @keyframes sfx-burst {
-  0%   { transform: scale(0.6) rotate(var(--r, -8deg)); opacity: 0; }
-  18%  { transform: scale(1.15) rotate(var(--r, -8deg)); opacity: 1; }
-  60%  { transform: scale(1) rotate(var(--r, -8deg)); opacity: 1; }
-  100% { transform: scale(1) rotate(var(--r, -8deg)) translateY(-30px); opacity: 0; }
+  0%   { transform: translate3d(0, 0, 0) scale(0.6) rotate(var(--r, -8deg)); opacity: 0; }
+  18%  { transform: translate3d(0, 0, 0) scale(1.15) rotate(var(--r, -8deg)); opacity: 1; }
+  60%  { transform: translate3d(0, 0, 0) scale(1) rotate(var(--r, -8deg)); opacity: 1; }
+  100% { transform: translate3d(0, -30px, 0) scale(1) rotate(var(--r, -8deg)); opacity: 0; }
 }
 
 /* ====== IMAGE SLOT PLACEHOLDER ====== */
@@ -1077,11 +1104,13 @@ button { font-family: inherit; cursor: pointer; }
     background: var(--paper);
     border-left: 3px solid var(--ink);
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
-    transform: translateX(105%);
+    transform: translate3d(105%, 0, 0);
     transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
-  .nav-links.is-open { transform: translateX(0); }
+  .nav-links.is-open { transform: translate3d(0, 0, 0); }
   .nav-links a {
     padding: 14px 12px;
     font-size: 15px;
@@ -1140,8 +1169,61 @@ button { font-family: inherit; cursor: pointer; }
 
 <script type="text/babel">
 
+/* ─── PERF HELPERS ─── */
+function useRafScroll(handler) {
+  const handlerRef = React.useRef(handler);
+  const rafRef = React.useRef(0);
+  React.useEffect(() => { handlerRef.current = handler; });
+  React.useEffect(() => {
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = 0;
+        handlerRef.current();
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+}
+
+function useDebouncedWindowEvent(event, handler, delay = 150) {
+  const handlerRef = React.useRef(handler);
+  React.useEffect(() => { handlerRef.current = handler; });
+  React.useEffect(() => {
+    let timer = 0;
+    const onEvent = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => handlerRef.current(), delay);
+    };
+    window.addEventListener(event, onEvent);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(event, onEvent);
+    };
+  }, [event, delay]);
+}
+
+const scrollLockSources = new Set();
+function setScrollLocked(source, locked) {
+  if (locked) scrollLockSources.add(source);
+  else scrollLockSources.delete(source);
+  document.body.classList.toggle("is-scroll-locked", scrollLockSources.size > 0);
+}
+
 /* ─── IMAGE SLOT PLACEHOLDER ─── */
-function ImageSlot({ placeholder = "Add image", src, fit = "cover", natural = false, loading = "lazy" }) {
+const ImageSlot = React.memo(function ImageSlot({
+  placeholder = "Add image",
+  src,
+  fit = "cover",
+  natural = false,
+  loading = "lazy",
+  fetchPriority,
+}) {
   if (src) {
     return (
       <img
@@ -1149,6 +1231,7 @@ function ImageSlot({ placeholder = "Add image", src, fit = "cover", natural = fa
         alt={placeholder}
         loading={loading}
         decoding="async"
+        fetchPriority={fetchPriority}
         style={natural
           ? { width: "100%", height: "auto", display: "block" }
           : { width: "100%", height: "100%", objectFit: fit, display: "block" }}
@@ -1168,7 +1251,7 @@ function ImageSlot({ placeholder = "Add image", src, fit = "cover", natural = fa
       <span className="img-slot-label">{placeholder}</span>
     </div>
   );
-}
+});
 
 /* ─── ICONS ─── */
 const Icons = {
@@ -1234,8 +1317,10 @@ function useActiveSection(ids) {
       const visible = entries
         .filter(e => e.isIntersecting)
         .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-      if (visible[0]) setActive(visible[0].target.id);
-    }, { rootMargin: "-30% 0px -50% 0px", threshold: [0, 0.25, 0.5] });
+      if (!visible[0]) return;
+      const id = visible[0].target.id;
+      setActive((prev) => (prev === id ? prev : id));
+    }, { rootMargin: "-28% 0px -52% 0px", threshold: [0, 0.2, 0.45] });
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (el) obs.observe(el);
@@ -1284,7 +1369,7 @@ function ScrollSFX() {
     const size = 30 + Math.random() * 38;
     const red = Math.random() < 0.45;
 
-    setBursts((b) => [...b, { id, word, top, left, rot, size, red }].slice(-8));
+    setBursts((b) => [...b, { id, word, top, left, rot, size, red }].slice(-6));
     setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 1400);
   }, []);
 
@@ -1292,6 +1377,7 @@ function ScrollSFX() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const touchOnly = window.matchMedia("(hover: none)").matches;
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const onHover = (e) => {
       const el = e.target.closest(SFX_TARGETS);
       if (!el || el.closest(".scroll-sfx-layer")) return;
@@ -1299,7 +1385,7 @@ function ScrollSFX() {
       spawnBurst(el);
     };
 
-    if (!touchOnly) document.addEventListener("mouseover", onHover);
+    if (!touchOnly) document.addEventListener("mouseover", onHover, { passive: true });
 
     const scrollEls = document.querySelectorAll(
       ".tile, .hero-art, .origin-art, .contact-art, " +
@@ -1309,12 +1395,12 @@ function ScrollSFX() {
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
             spawnBurst(entry.target);
           }
         });
       },
-      { threshold: [0.35, 0.55], rootMargin: "-5% 0px -5% 0px" }
+      { threshold: [0.4, 0.65], rootMargin: "-8% 0px -8% 0px" }
     );
 
     scrollEls.forEach((el) => obs.observe(el));
@@ -1322,19 +1408,22 @@ function ScrollSFX() {
     let scrollTick = 0;
     let rafId = 0;
     const onScroll = () => {
+      if (touchOnly || coarsePointer) return;
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
         rafId = 0;
         const now = Date.now();
         if (now < scrollTick) return;
-        scrollTick = now + (touchOnly ? 700 : 500);
+        scrollTick = now + 650;
         const midY = window.innerHeight * 0.45;
         const el = document.elementFromPoint(window.innerWidth * 0.5, midY)?.closest(SFX_TARGETS);
         if (el) spawnBurst(el);
       });
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (!touchOnly && !coarsePointer) {
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
 
     return () => {
       if (!touchOnly) document.removeEventListener("mouseover", onHover);
@@ -1378,17 +1467,13 @@ function Nav({ activeSection }) {
   ];
 
   React.useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    setScrollLocked("nav", menuOpen);
+    return () => setScrollLocked("nav", false);
   }, [menuOpen]);
 
-  React.useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth > 960) setMenuOpen(false);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  useDebouncedWindowEvent("resize", () => {
+    if (window.innerWidth > 960) setMenuOpen(false);
+  }, 160);
 
   const scrollTo = (e, id) => {
     e.preventDefault();
@@ -1531,7 +1616,7 @@ function Hero() {
         <span className="sfx hero-sfx-2" aria-hidden="true">INK</span>
         <div className="frame">
           <span className="corner-tag">PG. 01 — DEBUT</span>
-          <ImageSlot src="assets/hero1.png" placeholder="Hero illustration" loading="eager" />
+          <ImageSlot src="assets/w06.png" placeholder="Hero illustration" loading="eager" fetchPriority="high" />
         </div>
       </div>
 
@@ -1573,20 +1658,35 @@ const WORKS = [
     tags: ["Print", "Typography", "CMYK"],
   },
   {
-    id: "w06", num: "06", cat: "Sequential", title: "Fight Scene Study", span: "t-wide2",
-    image: "assets/w06.png",
-    desc: "Action choreography across a six-panel sequence — speed lines, impact frames, motion blur.",
-    tags: ["Comic", "Action", "Motion"],
+    id: "w06", num: "06", cat: "Character", title: "Character Portrait", span: "t-wide2",
+    image: "assets/hero1.png",
+    desc: "Expressive character portrait — ink weight, tone, and silhouette study built for narrative-led worlds.",
+    tags: ["Character", "Portrait", "Ink"],
+  },
+  {
+    id: "w07", num: "07", cat: "Architecture", title: "Architectural Illustrations", span: "t-tall",
+    image: "assets/w07.png",
+    desc: "Architectural illustration studies — perspective, structure, and atmospheric line work for built environments.",
+    tags: ["Architecture", "Perspective", "Line"],
+  },
+  {
+    id: "w08", num: "08", cat: "Sequential", title: "Sequential Spread", span: "t-wide",
+    image: "assets/w08.jpg",
+    desc: "Sequential art spread — panel rhythm, scene flow, and storytelling across a multi-frame layout.",
+    tags: ["Sequential", "Comic", "Layout"],
   },
 ];
 
-const CATEGORIES = ["All", "Character", "Sequential", "Manga Study", "Print"];
+const CATEGORIES = ["All", "Character", "Sequential", "Manga Study", "Print", "Architecture"];
 
 function Portfolio() {
   const [activeCat, setActiveCat] = React.useState("All");
   const [lightboxIdx, setLightboxIdx] = React.useState(null);
 
-  const filtered = activeCat === "All" ? WORKS : WORKS.filter(w => w.cat === activeCat);
+  const filtered = React.useMemo(
+    () => (activeCat === "All" ? WORKS : WORKS.filter(w => w.cat === activeCat)),
+    [activeCat]
+  );
   const open  = (idx) => setLightboxIdx(idx);
   const close = ()    => setLightboxIdx(null);
   const next  = ()    => setLightboxIdx(i => (i + 1) % filtered.length);
@@ -1600,10 +1700,10 @@ function Portfolio() {
       if (e.key === "ArrowLeft")  prev();
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    setScrollLocked("lightbox", true);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      setScrollLocked("lightbox", false);
     };
   }, [lightboxIdx, filtered.length]);
 
@@ -1675,7 +1775,9 @@ function Portfolio() {
               <img
                 src={active.image}
                 alt={active.title}
+                loading="eager"
                 decoding="async"
+                fetchPriority="high"
                 style={{ maxWidth: "100%", maxHeight: "min(72dvh, 720px)", width: "auto", height: "auto", display: "block" }}
               />
             </div>
@@ -1801,60 +1903,66 @@ const JOURNEY = [
   },
 ];
 
+function computeLineScale(p) {
+  if (p < 0.08) return 0;
+  if (p < 0.44) return ((p - 0.08) / 0.36) * 0.5;
+  return 0.5 + ((p - 0.44) / 0.5) * 0.5;
+}
+
 function Journey() {
   const timelineRef = React.useRef(null);
-  const [progress, setProgress] = React.useState(0);
+  const lineRef = React.useRef(null);
+  const maxProgress = React.useRef(0);
+  const [milestones, setMilestones] = React.useState({
+    dot1: false, card1: false, dot2: false, card2: false,
+  });
 
-  React.useEffect(() => {
+  const updateTimeline = React.useCallback(() => {
     const el = timelineRef.current;
     if (!el) return;
 
-    const update = () => {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const startAt = vh * 0.82;
+    const endAt = vh * 0.14;
+    const total = startAt - endAt + rect.height;
+    if (total <= 0) return;
 
-      const startAt = vh * 0.82;
-      const endAt = vh * 0.14;
-      const total = startAt - endAt + rect.height;
-      if (total <= 0) return;
+    const scrolled = startAt - rect.top;
+    const current = reduced
+      ? (rect.top < vh * 0.92 ? 1 : 0)
+      : Math.max(0, Math.min(1, scrolled / total));
 
-      const scrolled = startAt - rect.top;
-      const current = reduced
-        ? (rect.top < vh * 0.92 ? 1 : 0)
-        : Math.max(0, Math.min(1, scrolled / total));
+    maxProgress.current = Math.max(maxProgress.current, current);
+    const p = maxProgress.current;
 
-      // Keep the furthest reveal — scrolling back up does not hide items
-      setProgress((prev) => Math.max(prev, current));
+    const line = lineRef.current;
+    if (line) {
+      const scale = computeLineScale(p);
+      line.style.transform = `scaleY(${scale}) translateZ(0)`;
+    }
+
+    const next = {
+      dot1: p >= 0.05,
+      card1: p >= 0.38,
+      dot2: p >= 0.54,
+      card2: p >= 0.72,
     };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
+    setMilestones((prev) => (
+      prev.dot1 === next.dot1 && prev.card1 === next.card1 &&
+      prev.dot2 === next.dot2 && prev.card2 === next.card2
+        ? prev
+        : next
+    ));
   }, []);
 
-  const p = progress;
-  const dot1 = p >= 0.05;
-  const card1 = p >= 0.38;
-  const dot2 = p >= 0.54;
-  const card2 = p >= 0.72;
-
-  let lineScale = 0;
-  if (p >= 0.08) {
-    if (p < 0.44) {
-      lineScale = ((p - 0.08) / 0.36) * 0.5;
-    } else {
-      lineScale = 0.5 + ((p - 0.44) / 0.5) * 0.5;
-    }
-  }
+  useRafScroll(updateTimeline);
+  useDebouncedWindowEvent("resize", updateTimeline, 120);
 
   const nodeState = [
-    { dot: dot1, card: card1 },
-    { dot: dot2, card: card2 },
+    { dot: milestones.dot1, card: milestones.card1 },
+    { dot: milestones.dot2, card: milestones.card2 },
   ];
 
   return (
@@ -1864,10 +1972,7 @@ function Journey() {
       </p>
       <div className="timeline timeline--animated" ref={timelineRef}>
         <div className="timeline-track" aria-hidden="true">
-          <div
-            className="timeline-line"
-            style={{ transform: `scaleY(${lineScale})` }}
-          />
+          <div className="timeline-line" ref={lineRef} />
         </div>
         {JOURNEY.map((j, i) => (
           <div key={j.tag} className={`tl-node ${j.side}`}>
